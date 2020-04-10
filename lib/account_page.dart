@@ -1,11 +1,34 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AccountPage extends StatefulWidget {
+  final FirebaseUser user;
+
+  AccountPage(this.user);
+
   @override
   _AccountPageState createState() => _AccountPageState();
 }
 
 class _AccountPageState extends State<AccountPage> {
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  int _postCount=0;
+  
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    Firestore.instance.collection('post').where('email',isEqualTo: widget.user.email)
+    .getDocuments()
+    .then((snapShot){
+      setState(() {
+        _postCount = snapShot.documents.length;
+      });
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,7 +42,10 @@ class _AccountPageState extends State<AccountPage> {
       actions: <Widget>[
         IconButton(
           icon: Icon(Icons.exit_to_app),
-          onPressed: (){},
+          onPressed: (){
+            FirebaseAuth.instance.signOut();
+            _googleSignIn.signOut();
+          },
         )
       ],
     );
@@ -40,7 +66,7 @@ class _AccountPageState extends State<AccountPage> {
                     width:80,
                     height: 80,
                     child: CircleAvatar(
-                      backgroundImage: NetworkImage('https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcS6blbmQ-ec_p5yBprCsFJmTQPs9jwp0ziG8-lWsuYD0tEZlojF&usqp=CAU'),
+                      backgroundImage: NetworkImage(widget.user.photoUrl),
                     )
                   ),
                   Container(
@@ -73,10 +99,10 @@ class _AccountPageState extends State<AccountPage> {
               Padding(
                 padding: EdgeInsets.all(8.0)
               ),
-              Text('Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),)
+              Text(widget.user.displayName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),)
             ],
           ),
-          Text('0\n게시물',
+          Text('$_postCount\n게시물',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18.0),
           ),
